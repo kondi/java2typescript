@@ -85,6 +85,8 @@ public class ServiceDescriptorGenerator {
 
 	private ObjectMapper mapper;
 
+	private String alternateJsTemplate = null;
+
 	public ServiceDescriptorGenerator(Collection<? extends Class<?>> classes) {
 		this(classes, new ObjectMapper());
 	}
@@ -179,9 +181,14 @@ public class ServiceDescriptorGenerator {
 		RestService.toJSON(restServices, jsonOut);
 
 		// Read template content
-		String jsTemplate = com.google.common.io.Resources.toString(//
+		final String jsTemplate;
+		if (alternateJsTemplate != null) {
+			jsTemplate = alternateJsTemplate;
+		} else {
+			jsTemplate = com.google.common.io.Resources.toString(//
 				ServiceDescriptorGenerator.class.getResource(JS_TEMPLATE_RES), //
 				Charset.defaultCharset());
+		}
 
 		// Replace template values
 		String out = jsTemplate.replace(MODULE_NAME_PLACEHOLDER, moduleName);
@@ -297,5 +304,9 @@ public class ServiceDescriptorGenerator {
 			module.getVars().put(varName, type);
 		}
 
+	}
+
+	public void setAlternateJsTemplate(String alternateJsTemplate) {
+		this.alternateJsTemplate = alternateJsTemplate;
 	}
 }
