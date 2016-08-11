@@ -24,9 +24,11 @@ import java2typescript.jackson.module.writer.WriterPreferences;
 abstract public class AbstractNamedType extends AbstractType {
 
 	protected final String name;
+	private final Class<?> javaClass;
 
-	public AbstractNamedType(String className) {
+	public AbstractNamedType(String className, Class<?> javaClass) {
 		this.name = className;
+		this.javaClass = javaClass;
 	}
 
 	@Override
@@ -38,6 +40,10 @@ abstract public class AbstractNamedType extends AbstractType {
 		return name;
 	}
 
+	public Class<?> getJavaClass() {
+		return javaClass;
+	}
+
 	public void writeDef(Writer writer, WriterPreferences preferences) throws IOException {
 		if(!preferences.hasCustomWriter(this)) {
 			writeDefInternal(writer, preferences);
@@ -47,4 +53,5 @@ abstract public class AbstractNamedType extends AbstractType {
 	}
 
 	abstract public void writeDefInternal(Writer writer, WriterPreferences preferences) throws IOException;
+
 }

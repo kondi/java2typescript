@@ -33,8 +33,8 @@ public class StaticClassType extends AbstractNamedType {
 
 	private Map<String, Value> fields = new HashMap<String, Value>();
 
-	public StaticClassType(String className) {
-		super(className);
+	public StaticClassType(String className, Class<?> javaClass) {
+		super(className, javaClass);
 	}
 
 	@Override

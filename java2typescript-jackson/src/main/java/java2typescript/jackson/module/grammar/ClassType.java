@@ -19,14 +19,10 @@ import static java.lang.String.format;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import java2typescript.jackson.module.grammar.base.AbstractNamedType;
 import java2typescript.jackson.module.grammar.base.AbstractType;
@@ -39,15 +35,15 @@ public class ClassType extends AbstractNamedType {
 
 	private Map<String, FunctionType> methods = new LinkedHashMap<String, FunctionType>();
 
-	static private ClassType objectType = new ClassType("Object");
+	static private ClassType objectType = new ClassType("Object", Object.class);
 
 	/** Root Object class */
 	static public ClassType getObjectClass() {
 		return objectType;
 	}
 
-	public ClassType(String className) {
-		super(className);
+	public ClassType(String className, Class<?> javaClass) {
+		super(className, javaClass);
 	}
 
 	@Override
@@ -85,4 +81,5 @@ public class ClassType extends AbstractNamedType {
 	public Map<String, FunctionType> getMethods() {
 		return methods;
 	}
+
 }

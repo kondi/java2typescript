@@ -22,6 +22,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import java2typescript.jackson.module.grammar.base.AbstractNamedType;
 import java2typescript.jackson.module.writer.WriterPreferences;
 
@@ -30,8 +31,8 @@ public class EnumType extends AbstractNamedType {
 
 	private List<String> values = new ArrayList<String>();
 
-	public EnumType(String className) {
-		super(className);
+	public EnumType(String className, Class<?> javaClass) {
+		super(className, javaClass);
 	}
 
 	@Override

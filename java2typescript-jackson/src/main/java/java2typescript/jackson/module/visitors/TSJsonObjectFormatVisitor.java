@@ -53,7 +53,7 @@ public class TSJsonObjectFormatVisitor extends ABaseTSJsonFormatVisitor<ClassTyp
 
 	public TSJsonObjectFormatVisitor(ABaseTSJsonFormatVisitor<?> parentHolder, String className, Class clazz, Configuration conf) {
 		super(parentHolder, conf);
-		type = new ClassType(className);
+		type = new ClassType(className, clazz);
 		this.clazz = clazz;
 	}
 

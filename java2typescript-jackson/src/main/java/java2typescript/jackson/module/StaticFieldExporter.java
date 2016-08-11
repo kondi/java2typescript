@@ -59,7 +59,7 @@ public class StaticFieldExporter {
 				continue;
 			}
 			StaticClassType staticClass = new StaticClassType(clazz.getSimpleName()
-					+ CLASS_NAME_EXTENSION);
+					+ CLASS_NAME_EXTENSION, clazz);
 
 			Field[] declaredFields = clazz.getDeclaredFields();
 			for (Field field : declaredFields) {
