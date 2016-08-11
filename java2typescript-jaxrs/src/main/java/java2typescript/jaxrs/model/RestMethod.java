@@ -25,6 +25,7 @@ public class RestMethod {
 	private String path;
 	private List<Param> params;
 	private HttpMethod httpMethod;
+	private Object extra;
 
 	public String getPath() {
 		return path;
@@ -57,6 +58,14 @@ public class RestMethod {
 
 	public void setHttpMethod(HttpMethod httpMethod) {
 		this.httpMethod = httpMethod;
+	}
+
+	public Object getExtra() {
+		return extra;
+	}
+
+	public void setExtra(Object extra) {
+		this.extra = extra;
 	}
 
 }

@@ -73,6 +73,14 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
  */
 public class ServiceDescriptorGenerator {
 
+	public static interface ExtraFieldProvider {
+
+		public Object getExtraForService(Class<?> clazz);
+
+		public Object getExtraForMethod(Method method);
+
+	}
+
 	private static final String JS_TEMPLATE_RES = "module-template.js";
 
 	private static final String MODULE_NAME_PLACEHOLDER = "%MODULE_NAME%";
@@ -87,13 +95,17 @@ public class ServiceDescriptorGenerator {
 
 	private String alternateJsTemplate = null;
 
+	private ExtraFieldProvider extras = null;
+
 	public ServiceDescriptorGenerator(Collection<? extends Class<?>> classes) {
-		this(classes, new ObjectMapper());
+		this(classes, new ObjectMapper(), null);
 	}
 
-	public ServiceDescriptorGenerator(Collection<? extends Class<?>> classes, ObjectMapper mapper) {
+	public ServiceDescriptorGenerator(Collection<? extends Class<?>> classes, ObjectMapper mapper,
+			ExtraFieldProvider extraFieldProvider) {
 		this.classes = classes;
 		this.mapper = mapper;
+		this.extras = extraFieldProvider;
 		addDummyMappingForJAXRSClasses();
 	}
 
@@ -140,6 +152,10 @@ public class ServiceDescriptorGenerator {
 					RestMethod restMethod = generateMethod(method);
 					service.getMethods().put(restMethod.getName(), restMethod);
 				}
+			}
+
+			if (extras != null) {
+				service.setExtra(extras.getExtraForService(clazz));
 			}
 
 			services.add(service);
@@ -223,6 +239,10 @@ public class ServiceDescriptorGenerator {
 		}
 
 		restMethod.setParams(generateParams(method));
+
+		if (extras != null) {
+			restMethod.setExtra(extras.getExtraForMethod(method));
+		}
 
 		return restMethod;
 	}

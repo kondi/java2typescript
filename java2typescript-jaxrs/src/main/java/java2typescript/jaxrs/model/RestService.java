@@ -36,6 +36,7 @@ public class RestService {
 
 	private String name;
 	private String path;
+	private Object extra;
 	private final Map<String, RestMethod> methods = new HashMap<String, RestMethod>();
 
 	public String getName() {
@@ -44,6 +45,14 @@ public class RestService {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public Object getExtra() {
+		return extra;
+	}
+
+	public void setExtra(Object extra) {
+		this.extra = extra;
 	}
 
 	public String getPath() {
