@@ -112,6 +112,7 @@ public class MainMojo extends AbstractMojo {
 	private Writer createFileAndGetWriter(File folder, String fileName) throws IOException {
 		File file = new File(folder, fileName);
 		getLog().info("Create file : " + file.getCanonicalPath());
+		file.getParentFile().mkdirs();
 		file.createNewFile();
 		FileOutputStream stream = new FileOutputStream(file);
 		OutputStreamWriter writer = new OutputStreamWriter(stream);
