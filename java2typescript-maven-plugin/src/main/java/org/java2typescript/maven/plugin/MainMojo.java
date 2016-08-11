@@ -21,13 +21,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java2typescript.jackson.module.grammar.Module;
-import java2typescript.jaxrs.ServiceDescriptorGenerator;
+import java.util.Collection;
+
+import javax.ws.rs.Path;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import com.google.common.collect.Lists;
+
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import java2typescript.jackson.module.grammar.Module;
+import java2typescript.jaxrs.ServiceDescriptorGenerator;
 
 /**
  * Generate typescript file out of RESt service definition
@@ -41,12 +46,19 @@ public class MainMojo extends AbstractMojo {
 
 	/**
 	 * Full class name of the REST service
-	 * @required 
 	 * @parameter
 	 *    alias="serviceClass" 
 	 *    expression="${j2ts.serviceClass}"
 	 */
 	private String restServiceClassName;
+
+	/**
+	 * Package name to scan for classes
+	 * @parameter
+	 *    alias="servicePackage"
+	 *    expression="${j2ts.servicePackage}"
+	 */
+	private String restServicePackageName;
 
 	/**
 	 * Name of output module (ts,js)
@@ -96,8 +108,7 @@ public class MainMojo extends AbstractMojo {
 		try {
 
 			// Descriptor for service
-			Class<?> serviceClass = Class.forName(restServiceClassName);
-			ServiceDescriptorGenerator descGen = new ServiceDescriptorGenerator(Lists.newArrayList(serviceClass));
+			ServiceDescriptorGenerator descGen = new ServiceDescriptorGenerator(getClasses());
 			descGen.setAlternateJsTemplate(jsTemplate);
 
 			// To Typescript
@@ -118,6 +129,19 @@ public class MainMojo extends AbstractMojo {
 		} catch (Exception e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
+	}
+
+	private Collection<? extends Class<?>> getClasses() throws ClassNotFoundException {
+		Collection<Class<?>> classes = Lists.<Class<?>>newArrayList();
+		if (restServiceClassName != null) {
+			classes.add(Class.forName(restServiceClassName));
+		}
+		if (restServicePackageName != null) {
+			FastClasspathScanner scanner = new FastClasspathScanner(restServicePackageName);
+			scanner.matchClassesWithAnnotation(Path.class, classes::add);
+			scanner.scan();
+		}
+		return classes;
 	}
 
 	private Writer createFileAndGetWriter(File folder, String fileName) throws IOException {

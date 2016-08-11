@@ -120,6 +120,12 @@
       <artifactId>java2typescript-jaxrs</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.github.lukehutch</groupId>
+      <artifactId>fast-classpath-scanner</artifactId>
+      <version>1.99.0</version>
+    </dependency>
   </dependencies>
 
   <reporting>
