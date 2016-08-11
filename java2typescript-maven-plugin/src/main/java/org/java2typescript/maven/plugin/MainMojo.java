@@ -80,6 +80,16 @@ public class MainMojo extends AbstractMojo {
 	 */
 	private File jsOutFolder;
 
+	/**
+	 * An alternative JS template to module-template.js, given as String.
+	 * Two placeholders will be replaced: %MODULE_NAME% and %JSON% (the service descriptor the js runtime can work with)
+	 *
+	 * @parameter
+	 *    alias="jsTemplate"
+	 * 		expression="${j2ts.jsTempalte}"
+	 */
+	private String jsTemplate;
+
 	@Override
 	public void execute() throws MojoExecutionException {
 
@@ -88,6 +98,7 @@ public class MainMojo extends AbstractMojo {
 			// Descriptor for service
 			Class<?> serviceClass = Class.forName(restServiceClassName);
 			ServiceDescriptorGenerator descGen = new ServiceDescriptorGenerator(Lists.newArrayList(serviceClass));
+			descGen.setAlternateJsTemplate(jsTemplate);
 
 			// To Typescript
 			{
