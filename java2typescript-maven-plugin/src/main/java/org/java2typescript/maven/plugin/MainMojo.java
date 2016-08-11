@@ -31,6 +31,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import com.google.common.collect.Lists;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import java2typescript.jackson.module.Configuration;
 import java2typescript.jackson.module.grammar.Module;
 import java2typescript.jaxrs.ServiceDescriptorGenerator;
 
@@ -114,7 +115,7 @@ public class MainMojo extends AbstractMojo {
 			// To Typescript
 			{
 				Writer writer = createFileAndGetWriter(tsOutFolder, moduleName + ".d.ts");
-				Module tsModule = descGen.generateTypeScript(moduleName);
+				Module tsModule = descGen.generateTypeScript(moduleName, new Configuration());
 				tsModule.write(writer);
 				writer.close();
 			}

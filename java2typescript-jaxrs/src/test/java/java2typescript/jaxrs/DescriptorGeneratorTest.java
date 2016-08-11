@@ -89,7 +89,7 @@ public class DescriptorGeneratorTest {
 
 		mapper.registerModule(module);
 
-		Module tsModule = descGen.generateTypeScript("modName");
+		Module tsModule = descGen.generateTypeScript("modName", null);
 		tsModule.write(out);
 	}
 }

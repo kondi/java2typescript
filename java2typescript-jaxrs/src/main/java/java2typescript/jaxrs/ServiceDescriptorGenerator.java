@@ -31,6 +31,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import java2typescript.jackson.module.Configuration;
 import java2typescript.jackson.module.DefinitionGenerator;
 import java2typescript.jackson.module.grammar.AnyType;
 import java2typescript.jackson.module.grammar.ClassType;
@@ -167,11 +169,11 @@ public class ServiceDescriptorGenerator {
 	 * Generates a typescript definition of the REST service together with all
 	 * required named types (classes and enums)
 	 */
-	public Module generateTypeScript(String moduleName) throws JsonMappingException {
+	public Module generateTypeScript(String moduleName, Configuration configutation) throws JsonMappingException {
 
 		// Generates Typescript module out of service classses definition
 		DefinitionGenerator defGen = new DefinitionGenerator(mapper);
-		Module module = defGen.generateTypeScript(moduleName, classes, null);
+		Module module = defGen.generateTypeScript(moduleName, classes, configutation);
 
 		// For each rest service, update methods with parameter names, got from Rest service descriptor 
 		for (RestService restService : generateRestServices(classes)) {
