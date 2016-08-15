@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
     <parent>
-	    <groupId>java2typescript</groupId>
+	    <groupId>com.github.kondi.java2typescript</groupId>
 	    <artifactId>java2typescript</artifactId>
 	    <version>0.3-SNAPSHOT</version>
     </parent>
@@ -97,7 +97,7 @@
                 </configuration>
             </plugin>	
             <plugin>
-                <groupId>java2typescript</groupId>
+                <groupId>com.github.kondi.java2typescript</groupId>
                 <artifactId>java2typescript-maven-plugin</artifactId>
                 <version>0.3-SNAPSHOT</version>
                 <configuration>
