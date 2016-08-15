@@ -126,6 +126,11 @@
       <artifactId>fast-classpath-scanner</artifactId>
       <version>1.99.0</version>
     </dependency>
+    <dependency>
+      <groupId>io.reactivex</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>1.1.8</version>
+    </dependency>
   </dependencies>
 
   <reporting>
