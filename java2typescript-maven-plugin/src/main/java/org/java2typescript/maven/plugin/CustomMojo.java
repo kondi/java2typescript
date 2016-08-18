@@ -8,6 +8,8 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Path;
 
@@ -20,13 +22,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import java2typescript.jackson.module.Configuration;
 import java2typescript.jackson.module.conf.typename.SimpleJacksonTSTypeNamingStrategy;
+import java2typescript.jackson.module.grammar.AnyType;
 import java2typescript.jackson.module.grammar.ClassType;
 import java2typescript.jackson.module.grammar.FunctionType;
 import java2typescript.jackson.module.grammar.Module;
 import java2typescript.jackson.module.grammar.VoidType;
 import java2typescript.jackson.module.grammar.base.AbstractNamedType;
 import java2typescript.jackson.module.grammar.base.AbstractType;
-import java2typescript.jackson.module.writer.InternalModuleFormatWriter;
+import java2typescript.jackson.module.writer.ExternalModuleFormatWriter;
 import java2typescript.jackson.module.writer.ModuleWriter;
 import java2typescript.jaxrs.ServiceDescriptorGenerator;
 import java2typescript.jaxrs.ServiceDescriptorGenerator.ExtraFieldProvider;
@@ -42,7 +45,7 @@ import rx.functions.Func1;
  */
 public class CustomMojo extends AbstractMojo {
 
-	private static class MyModuleWriter extends InternalModuleFormatWriter {
+	private static class MyModuleWriter extends ExternalModuleFormatWriter {
 
 		private final String whitelistPackage;
 
@@ -54,9 +57,13 @@ public class CustomMojo extends AbstractMojo {
 		public void write(Module module, Writer writer) throws IOException {
 			Collection<AbstractNamedType> types = module.getNamedTypes().values();
 			types.removeIf(type -> {
+				if (type instanceof ServiceFactoryType) {
+					return false;
+				}
 				return !type.getJavaClass().getName().startsWith(whitelistPackage);
 			});
 			types.stream()
+				.filter(type -> !(type instanceof ServiceFactoryType))
 				.filter(ClassType.class::isInstance)
 				.map(ClassType.class::cast)
 				.forEach(type -> {
@@ -80,6 +87,24 @@ public class CustomMojo extends AbstractMojo {
 					writer.write(">");
 				}
 			};
+		}
+
+	}
+
+	private static class ServiceFactoryType extends ClassType {
+
+		public ServiceFactoryType(Collection<ClassType> serviceTypes) {
+			super("ServiceFactory", null);
+			addMethods(getMethods(), serviceTypes);
+		}
+
+		private void addMethods(Map<String, FunctionType> target, Collection<ClassType> services) {
+			for (ClassType service : services) {
+				String name = service.getName();
+				FunctionType method = new FunctionType();
+				method.setResultType(service);
+				target.put("get" + name, method);
+			}
 		}
 
 	}
@@ -117,16 +142,16 @@ public class CustomMojo extends AbstractMojo {
 	protected String methodExtraFieldProvider = "";
 	/**
 	 * @parameter
-	 *    alias="typeDefOutFolder"
-	 *    expression="${j2ts.typeDefOutFolder}"
+	 *    alias="typingsOutFolder"
+	 *    expression="${j2ts.typingsOutFolder}"
 	 */
-	protected File typeDefOutFolder = new File("target/typings");
+	protected File typingsOutFolder = new File("target/typings");
 	/**
 	 * @parameter
-	 *    alias="implOutFolder"
-	 *    expression="${j2ts.implOutFolder}"
+	 *    alias="metadataOutFolder"
+	 *    expression="${j2ts.metadataOutFolder}"
 	 */
-	protected File implOutFolder = new File("target/ts");
+	protected File metadataOutFolder = new File("target/js");
 	/**
 	 * @parameter
 	 *    alias="jsTemplate"
@@ -146,9 +171,13 @@ public class CustomMojo extends AbstractMojo {
 	public void generate() throws Exception {
 		ExtraFieldProvider extras = createExtraFieldProvider();
 		ServiceDescriptorGenerator generator = new ServiceDescriptorGenerator(getClasses(), new ObjectMapper(), extras);
-		generator.setAlternateJsTemplate(jsTemplate);
+		if (jsTemplate == null || jsTemplate.isEmpty()) {
+			generator.setAlternateJsTemplate("exports.metaData = %JSON%;");
+		} else {
+			generator.setAlternateJsTemplate(jsTemplate);
+		}
 
-		Writer typeDefOut = createFileAndGetWriter(typeDefOutFolder, moduleName + ".d.ts");
+		Writer typeDefOut = createFileAndGetWriter(typingsOutFolder, moduleName + ".d.ts");
 		Configuration configuration = new Configuration();
 		configuration.setNamingStrategy(new SimpleJacksonTSTypeNamingStrategy() {
 			@Override
@@ -161,16 +190,33 @@ public class CustomMojo extends AbstractMojo {
 				return super.getName(type);
 			}
 		});
-		Module tsModule = generator.generateTypeScript(moduleName, configuration);
-		// remove all module variables, as we only need the interfaces
-		tsModule.getVars().clear();
+		Module module = generator.generateTypeScript(moduleName, configuration);
+
+		// remove all module variables, as we have a factory type instead
+		module.getVars().clear();
+		module.getVars().put("metaData", AnyType.getInstance());
+		// add ServiceFactory type
+		ServiceFactoryType serviceFactory = createServiceFactoryType(module);
+		module.getNamedTypes().put(serviceFactory.getName(), serviceFactory);
+
 		ModuleWriter moduleWriter = new MyModuleWriter(whitelistPackage);
-		moduleWriter.write(tsModule, typeDefOut);
+		moduleWriter.write(module, typeDefOut);
 		typeDefOut.close();
 
-		Writer implOut = createFileAndGetWriter(implOutFolder, moduleName + ".js");
+		Writer implOut = createFileAndGetWriter(metadataOutFolder, moduleName + ".js");
 		generator.generateJavascript(moduleName, implOut);
 		implOut.close();
+	}
+
+	private ServiceFactoryType createServiceFactoryType(Module module) throws ClassNotFoundException {
+		Map<String, AbstractNamedType> types = module.getNamedTypes();
+		return new ServiceFactoryType(
+			getClasses().stream()
+				.map(Class::getSimpleName)
+				.map(types::get)
+				.map(ClassType.class::cast)
+				.collect(Collectors.toList())
+		);
 	}
 
 	@SuppressWarnings("unchecked")
