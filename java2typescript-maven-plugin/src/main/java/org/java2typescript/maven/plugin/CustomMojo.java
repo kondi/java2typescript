@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,13 +58,13 @@ public class CustomMojo extends AbstractMojo {
 		public void write(Module module, Writer writer) throws IOException {
 			Collection<AbstractNamedType> types = module.getNamedTypes().values();
 			types.removeIf(type -> {
-				if (type instanceof ServiceFactoryType) {
+				if (type instanceof GeneratedClassType) {
 					return false;
 				}
 				return !type.getJavaClass().getName().startsWith(whitelistPackage);
 			});
 			types.stream()
-				.filter(type -> !(type instanceof ServiceFactoryType))
+				.filter(type -> !(type instanceof GeneratedClassType))
 				.filter(ClassType.class::isInstance)
 				.map(ClassType.class::cast)
 				.forEach(type -> {
@@ -91,10 +92,17 @@ public class CustomMojo extends AbstractMojo {
 
 	}
 
-	private static class ServiceFactoryType extends ClassType {
+	private static class GeneratedClassType extends ClassType {
 
-		public ServiceFactoryType(Collection<ClassType> serviceTypes) {
-			super("ServiceFactory", null);
+		public GeneratedClassType(String className) {
+			super(className, null);
+		}
+	}
+
+	private static class ClientFactoryType extends GeneratedClassType {
+
+		public ClientFactoryType(Collection<ClassType> serviceTypes) {
+			super("ClientFactory");
 			addMethods(getMethods(), serviceTypes);
 		}
 
@@ -104,6 +112,34 @@ public class CustomMojo extends AbstractMojo {
 				FunctionType method = new FunctionType();
 				method.setResultType(service);
 				target.put("get" + name, method);
+			}
+		}
+
+	}
+
+	private static class ServerFactoryType extends GeneratedClassType {
+
+		private static class TypeParameterType extends AbstractType {
+
+			@Override
+			public void write(Writer writer) throws IOException {
+				writer.write("T");
+			}
+
+		}
+
+		public ServerFactoryType(Collection<ClassType> serviceTypes) {
+			super("ServerFactory<T>");
+			addMethods(getMethods(), serviceTypes);
+		}
+
+		private void addMethods(Map<String, FunctionType> target, Collection<ClassType> services) {
+			for (ClassType service : services) {
+				String name = service.getName();
+				FunctionType method = new FunctionType();
+				method.setResultType(new TypeParameterType());
+				method.getParameters().put("service", service);
+				target.put("for" + name, method);
 			}
 		}
 
@@ -195,9 +231,13 @@ public class CustomMojo extends AbstractMojo {
 		// remove all module variables, as we have a factory type instead
 		module.getVars().clear();
 		module.getVars().put("metaData", AnyType.getInstance());
-		// add ServiceFactory type
-		ServiceFactoryType serviceFactory = createServiceFactoryType(module);
-		module.getNamedTypes().put(serviceFactory.getName(), serviceFactory);
+
+		// add ClientFactory and ServerFactory types
+		List<ClassType> serviceClasses = getServiceClasses(module);
+		ClientFactoryType clientFactory = new ClientFactoryType(serviceClasses);
+		ServerFactoryType serverFactory = new ServerFactoryType(serviceClasses);
+		module.getNamedTypes().put(clientFactory.getName(), clientFactory);
+		module.getNamedTypes().put(serverFactory.getName(), serverFactory);
 
 		ModuleWriter moduleWriter = new MyModuleWriter(whitelistPackage);
 		moduleWriter.write(module, typeDefOut);
@@ -208,15 +248,13 @@ public class CustomMojo extends AbstractMojo {
 		implOut.close();
 	}
 
-	private ServiceFactoryType createServiceFactoryType(Module module) throws ClassNotFoundException {
+	private List<ClassType> getServiceClasses(Module module) throws ClassNotFoundException {
 		Map<String, AbstractNamedType> types = module.getNamedTypes();
-		return new ServiceFactoryType(
-			getClasses().stream()
-				.map(Class::getSimpleName)
-				.map(types::get)
-				.map(ClassType.class::cast)
-				.collect(Collectors.toList())
-		);
+		return getClasses().stream()
+			.map(Class::getSimpleName)
+			.map(types::get)
+			.map(ClassType.class::cast)
+			.collect(Collectors.toList());
 	}
 
 	@SuppressWarnings("unchecked")
