@@ -17,12 +17,10 @@ import javax.ws.rs.Path;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import java2typescript.jackson.module.Configuration;
-import java2typescript.jackson.module.conf.typename.SimpleJacksonTSTypeNamingStrategy;
 import java2typescript.jackson.module.grammar.AnyType;
 import java2typescript.jackson.module.grammar.ClassType;
 import java2typescript.jackson.module.grammar.FunctionType;
@@ -214,19 +212,7 @@ public class CustomMojo extends AbstractMojo {
 		}
 
 		Writer typeDefOut = createFileAndGetWriter(typingsOutFolder, moduleName + ".d.ts");
-		Configuration configuration = new Configuration();
-		configuration.setNamingStrategy(new SimpleJacksonTSTypeNamingStrategy() {
-			@Override
-			public String getName(JavaType type) {
-				if (type.hasGenericTypes()) {
-					if (type.getRawClass().getName().equals("rx.Observable")) {
-						type = type.containedType(0);
-					}
-				}
-				return super.getName(type);
-			}
-		});
-		Module module = generator.generateTypeScript(moduleName, configuration);
+		Module module = generator.generateTypeScript(moduleName, new Configuration());
 
 		// remove all module variables, as we have a factory type instead
 		module.getVars().clear();

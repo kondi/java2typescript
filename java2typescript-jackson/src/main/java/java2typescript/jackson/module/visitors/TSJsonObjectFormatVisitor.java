@@ -103,7 +103,12 @@ public class TSJsonObjectFormatVisitor extends ABaseTSJsonFormatVisitor<ClassTyp
 	private AbstractType getTSTypeForClass(AnnotatedMember member) {
 
 		TypeBindings bindings = new TypeBindings(TypeFactory.defaultInstance(), member.getDeclaringClass());
-		BeanProperty prop = new BeanProperty.Std(member.getName(), member.getType(bindings), NO_NAME,
+		JavaType javaType = member.getType(bindings);
+		if (javaType.getRawClass().getSimpleName().equals("Observable")) {
+			javaType = javaType.containedType(0);
+		}
+
+		BeanProperty prop = new BeanProperty.Std(member.getName(), javaType, NO_NAME,
 				new AnnotationMap(), member, false);
 
 		try {
