@@ -68,7 +68,7 @@ public class CustomMojo extends AbstractMojo {
 				.forEach(type -> {
 					type.getMethods().values().forEach(this::wrapInObservable);
 				});
-			writer.write("import { Observable } from 'rxjs/Observable';\n\n");
+			writer.write("import { Subscribable as Observable } from 'rxjs/Observable';\n\n");
 			super.write(module, writer);
 		}
 
